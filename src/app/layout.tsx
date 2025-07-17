@@ -1,7 +1,9 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { ReduxProvider } from '@/lib/redux/provider';
 
 export const metadata: Metadata = {
   title: 'Unihub Landing',
@@ -25,7 +27,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <ReduxProvider>{children}</ReduxProvider>
           <Toaster />
         </ThemeProvider>
       </body>

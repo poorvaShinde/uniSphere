@@ -14,10 +14,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,8 +29,14 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onClose: () => void;
+}
+
+export default function LoginForm({ onClose }: LoginFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,35 +46,30 @@ export default function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     try {
       const { email, password } = values;
-      const userCredential = await signInWithEmailAndPassword(
+      await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      const user = userCredential.user;
-
-      // Fetch user role from Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
       
-      let userRole = 'student'; // Default role
+      toast({
+        title: 'Success!',
+        description: 'You have been logged in.',
+      });
+      onClose();
+      router.push(`/onboarding`);
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        userRole = userData.role;
-      } else {
-        // If the document doesn't exist, create it with a default role
-        await setDoc(userDocRef, { role: userRole });
-        console.log("User document didn't exist, created one with default role.");
-      }
-      
-      console.log('User logged in successfully!');
-      router.push(`/dashboard/${userRole}`);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error logging in:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
     }
   }
 
@@ -100,7 +102,9 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Log In</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Logging in...' : 'Log In'}
+        </Button>
       </form>
     </Form>
   );

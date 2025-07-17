@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import LoginForm from './login-form';
@@ -36,6 +37,9 @@ export default function AuthModal({
           <DialogTitle>
             {activeTab === 'login' ? 'Log In' : 'Sign Up'}
           </DialogTitle>
+          <DialogDescription>
+            Enter your credentials to access your account.
+          </DialogDescription>
         </DialogHeader>
         <Tabs
           value={activeTab}
@@ -51,7 +55,7 @@ export default function AuthModal({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="login">
-            <LoginForm />
+            <LoginForm onClose={onClose} />
           </TabsContent>
           <TabsContent value="signup">
             <SignupForm />
