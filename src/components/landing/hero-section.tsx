@@ -84,12 +84,11 @@ const HeroSection = () => {
             </div>
             <motion.div className="relative" variants={itemVariants}>
               <Image
-                src="https://placehold.co/600x400.png"
-                alt="Collaboration"
+                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                alt="A diverse group of students collaborating on a project with their laptops."
                 width={600}
                 height={400}
                 className="rounded-xl shadow-2xl"
-                data-ai-hint="collaboration students"
               />
             </motion.div>
           </motion.div>
