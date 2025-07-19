@@ -28,6 +28,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -51,6 +52,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function ProfileForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -62,6 +64,7 @@ export default function ProfileForm() {
   });
 
   async function onSubmit(data: ProfileFormValues) {
+    setIsLoading(true);
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -91,13 +94,15 @@ export default function ProfileForm() {
       });
 
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating profile:', error);
       toast({
-        title: 'Error',
-        description: 'There was an error creating your profile.',
+        title: 'Error creating profile',
+        description: error.message || 'Please check your permissions and try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -200,20 +205,9 @@ export default function ProfileForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder={auth.currentUser?.email || ''} {...field} readOnly />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Submitting...' : 'Submit'}
+        </Button>
       </form>
     </Form>
   );
