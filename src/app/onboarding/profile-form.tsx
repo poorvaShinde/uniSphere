@@ -23,12 +23,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -44,10 +45,19 @@ const profileFormSchema = z.object({
   bio: z.string().max(160, {
     message: 'Bio must not be longer than 160 characters.',
   }),
-  profilePicture: z.any().refine((file) => file?.length == 1, 'File is required.'),
+  profilePicture: z.any()
+    .refine((files) => files?.length == 1, 'File is required.')
+    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 1MB.`),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
 
 export default function ProfileForm() {
   const { toast } = useToast();
@@ -71,11 +81,9 @@ export default function ProfileForm() {
         throw new Error('User not authenticated.');
       }
 
-      // Upload profile picture to Firebase Storage
+      // Convert image to Base64
       const file = data.profilePicture[0];
-      const storageRef = ref(storage, `profile-pictures/${user.uid}`);
-      await uploadBytes(storageRef, file);
-      const photoURL = await getDownloadURL(storageRef);
+      const photoURL = await toBase64(file);
 
       // Save user data to Firestore
       await setDoc(doc(db, 'users', user.uid), {
@@ -90,15 +98,16 @@ export default function ProfileForm() {
 
       toast({
         title: 'Profile created!',
-        description: 'Your profile has been successfully created.',
+        description: 'Your profile has been successfully created. Redirecting...',
       });
 
       router.push('/dashboard');
+
     } catch (error: any) {
       console.error('Error creating profile:', error);
       toast({
-        title: 'Error creating profile',
-        description: error.message || 'Please check your permissions and try again.',
+        title: 'Submission Failed',
+        description: error.message || 'There was an error creating your profile.',
         variant: 'destructive',
       });
     } finally {
@@ -116,8 +125,11 @@ export default function ProfileForm() {
             <FormItem>
               <FormLabel>Profile Picture</FormLabel>
               <FormControl>
-                <Input type="file" {...form.register('profilePicture')} />
+                <Input type="file" accept="image/*" {...form.register('profilePicture')} />
               </FormControl>
+               <FormDescription>
+                Please upload an image smaller than 1MB.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
