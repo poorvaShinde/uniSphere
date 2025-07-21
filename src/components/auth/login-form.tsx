@@ -14,8 +14,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -49,18 +50,32 @@ export default function LoginForm({ onClose }: LoginFormProps) {
     setIsLoading(true);
     try {
       const { email, password } = values;
-      await signInWithEmailAndPassword(
+      const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
       
+      const user = userCredential.user;
+
+      // Check if user has a profile
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
       toast({
         title: 'Success!',
         description: 'You have been logged in.',
       });
+      
       onClose();
-      router.push(`/onboarding`);
+
+      if (userDoc.exists()) {
+        // User has a profile, redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        // User does not have a profile, redirect to onboarding
+        router.push('/onboarding');
+      }
 
     } catch (error: any) {
       console.error('Error logging in:', error);

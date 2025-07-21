@@ -3,14 +3,22 @@
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Edit } from 'lucide-react';
+import EditProfileForm from './edit-profile-form';
 
 interface UserProfile {
   name: string;
@@ -25,35 +33,37 @@ interface UserProfile {
 const DashboardPage = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as UserProfile);
-          }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-        }
-      }
-      setLoading(false);
-    };
-
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (user) {
-        fetchUserProfile();
+        // User is signed in, let's listen for their profile document.
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribeProfile = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserProfile(doc.data() as UserProfile);
+          } else {
+            // User is authenticated but has no profile document.
+            setUserProfile(null);
+          }
+          setLoading(false);
+        });
+        return () => unsubscribeProfile(); // Cleanup the profile listener when auth state changes
       } else {
+        // User is signed out.
+        setUserProfile(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Cleanup the auth listener on component unmount
   }, []);
+
+  const handleUpdateSuccess = () => {
+    setIsEditDialogOpen(false);
+  };
 
   if (loading) {
     return (
@@ -109,18 +119,31 @@ const DashboardPage = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card className="overflow-hidden">
-        <CardHeader className="bg-muted/40 p-6">
-          <div className="flex items-center space-x-6">
-            <Avatar className="h-28 w-28 border-4 border-background">
-              <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />
-              <AvatarFallback className="text-3xl">{userProfile.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-3xl font-bold">{userProfile.name}</CardTitle>
-              <p className="text-muted-foreground">{userProfile.email}</p>
-              <Badge className="mt-2 capitalize" variant={userProfile.role === 'student' ? 'default' : 'secondary'}>{userProfile.role}</Badge>
+        <CardHeader className="bg-muted/40 p-6 flex flex-row items-center justify-between">
+            <div className="flex items-center space-x-6">
+                <Avatar className="h-28 w-28 border-4 border-background">
+                <AvatarImage src={userProfile.photoURL} alt={userProfile.name} />
+                <AvatarFallback className="text-3xl">{userProfile.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                <CardTitle className="text-3xl font-bold">{userProfile.name}</CardTitle>
+                <p className="text-muted-foreground">{userProfile.email}</p>
+                <Badge className="mt-2 capitalize" variant={userProfile.role === 'student' ? 'default' : 'secondary'}>{userProfile.role}</Badge>
+                </div>
             </div>
-          </div>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                     <Button variant="outline" size="icon">
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                    <DialogTitle>Edit Profile</DialogTitle>
+                    </DialogHeader>
+                    <EditProfileForm userProfile={userProfile} onSuccess={handleUpdateSuccess} />
+                </DialogContent>
+            </Dialog>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
           <div>

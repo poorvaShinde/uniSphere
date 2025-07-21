@@ -4,9 +4,10 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ReduxProvider } from '@/lib/redux/provider';
+import Header from '@/components/header';
 
 export const metadata: Metadata = {
-  title: 'Unihub Landing',
+  title: 'Unihub',
   description: 'Connect, collaborate, and create with students from across the globe.',
 };
 
@@ -27,8 +28,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ReduxProvider>{children}</ReduxProvider>
-          <Toaster />
+          <ReduxProvider>
+            <Header />
+            {children}
+            <Toaster />
+          </ReduxProvider>
         </ThemeProvider>
       </body>
     </html>
