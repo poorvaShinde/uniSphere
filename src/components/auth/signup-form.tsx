@@ -25,6 +25,8 @@ import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useState } from 'react'; // Import useState
 
 const formSchema = z.object({
   email: z.string().email({
@@ -38,6 +40,9 @@ const formSchema = z.object({
 
 export default function SignupForm() {
   const router = useRouter();
+  const { toast } = useToast(); // Initialize toast
+  const [isLoading, setIsLoading] = useState(false); // Initialize isLoading state
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,6 +53,7 @@ export default function SignupForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true); // Set loading to true on submission
     try {
       const { email, password, userType } = values;
       const userCredential = await createUserWithEmailAndPassword(
@@ -62,10 +68,30 @@ export default function SignupForm() {
         role: userType,
       });
 
-      console.log('User signed up successfully!');
-      router.push(`/dashboard/${userType}`);
-    } catch (error) {
+      toast({
+        title: 'Sign Up Successful!',
+        description: 'Welcome to Unihub!',
+      });
+      // Redirect to onboarding page after successful sign-up to complete profile
+      router.push('/onboarding'); 
+    } catch (error: any) { // Add ': any' for error type
       console.error('Error signing up:', error);
+      let errorMessage = 'An unexpected error occurred.';
+
+      // Specific error handling for Firebase email-already-in-use
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email address is already in use. Please use a different email or log in.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: 'Sign Up Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false); // Set loading to false regardless of success or failure
     }
   }
 
@@ -119,7 +145,7 @@ export default function SignupForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Sign Up</Button>
+        <Button type="submit" disabled={isLoading}>Sign Up</Button> {/* Disable button when loading */}
       </form>
     </Form>
   );
