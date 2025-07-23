@@ -78,7 +78,7 @@ export default function EditProfileForm({ userProfile, onSuccess }: EditProfileF
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: userProfile.name,
-      role: userProfile.role,
+      role: userProfile.role as ProfileFormValues['role'],
       interests: userProfile.interests.join(', '),
       skills: userProfile.skills.join(', '),
       bio: userProfile.bio,
