@@ -9,6 +9,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import AuthModal from '@/components/auth/auth-modal';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Header() {
   const [user, loading] = useAuthState(auth);
@@ -45,6 +46,9 @@ export default function Header() {
                    <Button variant="ghost" onClick={() => router.push('/dashboard')}>
                     <User className="mr-2 h-4 w-4" />
                     Dashboard
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <Link href="/main">Opportunities</Link>
                   </Button>
                   <Button variant="outline" onClick={handleLogout}>
                      <LogOut className="mr-2 h-4 w-4" />
