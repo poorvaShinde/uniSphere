@@ -1,5 +1,14 @@
-# Firebase Studio
+# uniSphere
 
-This is a NextJS starter in Firebase Studio.
+UniSphere helps students discover, share and colaborate on opportunities like hackathons, conferences, and campus events.
 
-To get started, take a look at src/app/page.tsx.
+## Tech Stack 🛠️
+
+- **Next.js (14+)** – React framework for the web
+- **TypeScript** 
+- **Firebase** – Auth, database, and easy cloud setup
+- **Vercel** –  Deployment
+
+## How to use
+
+Clone, install, add Firebase keys, and run . 
