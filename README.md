@@ -1,6 +1,6 @@
 # uniSphere
 
-UniSphere helps students discover, share and colaborate on opportunities like hackathons, conferences, and campus events.
+UniSphere helps students discover, share and collaborate on opportunities like hackathons, conferences, and campus events.
 
 ## Tech Stack 🛠️
 
